@@ -1,66 +1,89 @@
-# BlushNote：基於動態臉部辨識之美妝 AR 教學系統
+# BlushNote：基於動態臉部辨識與端點 AI 之美妝 AR 教學系統
 
-> **指導教授**：劉譯閔 教授  
+> **指導教授**：劉譯閎 教授  
+> **競賽經歷**：2026 大專校院資訊應用服務創新競賽產學合作組（現在進行式）
 > **專案小組成員**：盧恩佳、洪語欣、廖冠筑、簡偉玲  
-> **個人核心職責**：演算法原型研發與驗證、雲端資料庫架構設計 (Supabase / RLS)、雙來源加權推薦邏輯、專案進度管理
+> **個人核心職責**：特徵分析與推薦演算法原型研發 (Python / Jupyter Notebook)、雲端資料庫建置 (Supabase / PostgreSQL / RLS)、iOS 通訊串流與 API 文件整理、專案進度管理
 
 ---
 
 ## 📌 專案背景與核心價值
-針對美妝新手對自身臉型特徵認知不足、妝容選品決策成本高及化妝步驟缺乏即時反饋等痛點，本專案開發 iPad 原生美妝引導應用 **BlushNote**。系統結合裝置端臉部特徵分析演算法、個人化加權推薦模型與 AR 即時步驟疊加引導，打造兼顧個人隱私與互動體驗的美妝學習方案。
+
+針對美妝新手對自身臉型特徵認知不足、妝容選品決策成本高及化妝步驟缺乏即時反饋等痛點，本專案開發 iPad 原生美妝引導應用 **BlushNote**。
+
+系統結合裝置端臉部特徵分析演算法、個人化加權推薦模型與 AR 即時步驟疊加引導，打造兼顧個人隱私與互動體驗的美妝學習方案：
+1. **Privacy by Design（零影像外傳）**：影像處理與特徵擷取 100% 於 iPad 本地端 NPU/GPU 運算，照片不回傳雲端，自源頭杜絕生物特徵洩漏風險。
+2. **多標準決策推薦（MCDM Algorithm）**：結合生理客觀特徵與主觀風格偏好，毫秒級計算出具可解釋性的個人化妝容推薦。
+3. **空間化 3D 步驟引導**：於視訊畫面上實時疊加 3D 塗抹範圍與暈染方向，實現「對鏡跟練」的沉浸式教學。
+
+---
+
+## 👩‍💻 個人核心貢獻與技術實作 (Key Personal Contributions)
+
+作為專案的演算法研發與後端資料庫核心負責人，本人主要主導以下模組之設計與實作：
+
+### 1. 臉部特徵分析原型與加權推薦演算法研發 (Python & MCDM Algorithm)
+* **特徵分析演算法原型**：在 Jupyter Notebook 中建立人臉特徵分析與膚色色調判斷演算法原型，驗證非結構化影像特徵轉化為結構化標籤的可行性。
+* **雙來源加權推薦邏輯**：設計結合 MCDM（多標準決策分析）與 Jaccard 相似度的推薦架構，進行邊界條件測試、權重靈敏度校正與骨骼相容矩陣設計，確保推薦結果兼具精準度與可解釋性。
+
+### 2. Supabase 雲端資料庫建置與資安政策 (PostgreSQL & RLS)
+* **資料庫 Schema 規劃**：於 Supabase (PostgreSQL) 建立並正規化 7 張核心資料表（涵蓋 Profiles、Templates、Steps、收藏夾與社群互動）。
+* **生物特徵防護與 RLS 列級安全**：落實 Privacy by Design 原則，並於 PostgreSQL 撰寫 3 項嚴謹的 Row-Level Security (RLS) 安全政策，配合 JWT 鑑權實作企業級用戶權限隔離。
+
+### 3. 前後端 API 串接文檔與開發協作 (API & Developer Documentation)
+* **跨端串接指南整理**：負責撰寫與整理 Supabase RESTful API 通訊規範、PostgREST 查詢範例及資料結構規格書，提供給負責 iOS 環境開發的同學進行端對端串接與整合。
+
+### 4. 專案進度管理與資服競賽籌備 (Project Management)
+* **進度控制與里程碑交付**：統籌團隊 4 人之開發時程與任務指派，控管資服競賽產學合作組系統概述文件、技術展示文檔與展演 Prototype 之準時交付。
+
+---
+
+## 🧠 核心推薦演算法與數學模型 (Recommendation Engine)
+
+推薦引擎採用**多標準決策分析 (MCDM)** 與 **Jaccard 相似度** 結合的加權評分架構，將感性的彩妝經驗轉化為可解釋的量化指標，計算總契合度得分（Score 介於 0 至 100 分）：
+
+**推薦總分公式**：  
+`Score = 100 × (0.50 × S_skin + 0.35 × S_face + 0.15 × S_style)`
+
+---
+
+### 權重分配與指標拆解
+
+* **膚色調性相似度 (S_skin) — 權重 50%**  
+  彩妝之首在於底妝調性。
+  * 完全匹配（如：暖色 ↔ 暖色）：給予 `1.0`
+  * 中性色調過渡（如：中性 ↔ 暖色/冷色）：給予 `0.5`
+  * 衝突色調：給予 `0.0`
+
+* **臉型骨骼相容性 (S_face) — 權重 35%**  
+  考慮彩妝技法之跨臉型轉移性。
+  * 完全相同：給予 `1.0`
+  * 相容結構對（如：`["圓臉", "鵝蛋臉"]`、`["長臉", "心型臉"]`、`["方臉", "長臉"]`）：給予 `0.5`
+  * 其餘非相容組合：給予 `0.0`
+
+* **風格標籤相似度 (S_style) — 權重 15%**  
+  採用 **Jaccard 相似度** 運算用戶自選標籤集 A 與模板標籤集 B 之重合度：  
+  `S_style = |A ∩ B| / |A ∪ B|`  
+  *(若使用者未勾選偏好標籤，預設 `S_style = 1.0` 不扣分)*
 
 ---
 
 ## 🏗️ 系統總體架構 (System Architecture)
 
-系統採用**「邊緣運算特徵解析 ＋ 雲端微服務解耦」**架構，落實隱私優先原則：
+<p align="center">
+  <img src="https://github.com/user-attachments/assets/09c82460-1549-4629-98a1-0c64ae9c4d55" width="85%" alt="BlushNote 系統總體架構圖">
+</p>
 
-```mermaid
-%%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#FDECEF', 'edgeLabelBackground':'#FFF9F9', 'tertiaryColor': '#FAF0F2'}}}%%
-flowchart TD
-    %% 節點定義
-    A["📷 使用者 / iPad 鏡頭串流"] -->|"AVFoundation 實時影像串流"| B["📱 裝置端特徵分析模組"]
-
-    subgraph Client["🌸 裝置端邊緣運算 (Client Device)"]
-        B --> C["Face Landmark 幾何特徵捕捉<br/>(五官定位 · 輪廓長寬比例)"]
-        B --> D["HSV 色彩空間膚色識別<br/>(冷暖色調 · 膚色明度等級)"]
-        C --> E["📐 臉型分類規則引擎<br/>(分析完成度 96% 信心校驗)"]
-        D --> E
-        E -->|"客觀生理標籤 (權重 x2)"| F["✨ 雙來源標籤加權推薦引擎"]
-        CustomTag["🏷️ 使用者自選偏好標籤<br/>(風格 · 場合 · 權重 x1)"] --> F
-    end
-
-    subgraph Backend["☁️ 雲端服務與資料庫 (Supabase Backend)"]
-        G["🔐 GoTrue 身分驗證服務<br/>(/auth/v1 · JWT 鑑權)"] <-->|"REST API"| H["🌐 iPad URLSession 通訊層"]
-        I["⚡ PostgREST 資料存取介面<br/>(/rest/v1 · 動態 CRUD)"] <-->|"REST API"| H
-        I <--> J[("🗄️ PostgreSQL 關聯資料庫<br/>(7張核心資料表)")]
-        J --- K["🛡️ 3 項 RLS 列級安全性政策<br/>(用戶隱私與權限隔離)"]
-    end
-
-    F <-->|"匹配查詢與權重計算"| H
-    F --> L["💄 ARKit 虛擬面具動態彩妝疊加教學"]
-
-    %% 美學樣式定義 (BlushNote 專屬溫柔玫瑰色系)
-    classDef pinkBox fill:#FCECEF,stroke:#D9828A,stroke-width:1.8px,color:#5A2A32,rx:10px,ry:10px;
-    classDef softRose fill:#F9E2E6,stroke:#C46872,stroke-width:1.8px,color:#4A2026,rx:10px,ry:10px;
-    classDef wineRed fill:#9D384D,stroke:#7F2538,stroke-width:2px,color:#FFFFFF,rx:12px,ry:12px;
-    classDef cloudBox fill:#FFF5F6,stroke:#E2A8B0,stroke-width:1.8px,stroke-dasharray: 4 4,color:#5C3238,rx:10px,ry:10px;
-    classDef dataBox fill:#F5D5DC,stroke:#B05362,stroke-width:2px,color:#421C22,rx:12px,ry:12px;
-
-    class A,L wineRed;
-    class B,C,D,CustomTag pinkBox;
-    class E,F softRose;
-    class G,I,H,K cloudBox;
-    class J dataBox;
-```
+### 架構亮點
+1. **端點 AI 運算 (Client Side)**：於 iPadOS 本地端透過 AVFoundation 擷取實時視訊，呼叫 Apple Vision 進行幾何臉型與 HSV 膚色色調辨識，完全不經雲端 API。
+2. **微服務與資安防護 (Supabase Backend)**：串接 Supabase GoTrue 進行 JWT 鑑權，PostgreSQL 開啟 Row-Level Security (RLS) 列級安全政策，確保用戶隱私與權限隔離。
 
 ---
 
-## 🎬 實機操作動態展示 (Live Application Demos)
+## 🛠️ 技術棧與工具列表 (Tech Stack)
 
-系統介面以優雅溫和的視覺體驗為核心，結合流暢的帳號驗證、邊緣端即時人臉分析與專屬瀑布流推薦：
-
-| 01. 帳號註冊與個人設定 | 02. 即時人臉分析與標籤推薦 | 03. 快速登入與專屬推薦主頁 |
-| :---: | :---: | :---: |
-| <img src="./docs/videos/01_register.gif" width="280" alt="註冊與暱稱頭像設定" /> | <img src="./docs/videos/02_analysis.gif" width="280" alt="人臉特徵與膚色分析" /> | <img src="./docs/videos/03_login_home.gif" width="280" alt="登入與瀑布流首頁" /> |
-| **流暢註冊與個人設定**<br>• 電子郵件與密碼安全檢查<br>• 建立使用者暱稱與個人化帳號<br>• 串接 Supabase GoTrue 鑑權 | **智慧檢測與特徵標籤**<br>• 光線與臉部角度即時提示<br>• 幾何特徵點計算臉型 (鵝蛋臉)<br>• HSV 膚色色調判定 (暖色調/健康)<br>• 雙來源特徵標籤即時比對 | **專屬個人化美妝首頁**<br>• 快速登入鑑權與狀態同步<br>• 依照加權匹配分數動態排序<br>• 瀑布流瀏覽專屬推薦妝容 |
+* **演算法原型與數值驗證**：Python, Jupyter Notebook, NumPy, Pandas (MCDM 模型與特徵分析)
+* **後端與雲端架構**：Supabase, PostgreSQL, PostgREST, GoTrue Auth
+* **資安與存取控制**：Row-Level Security (RLS) 權限隔離策略, JWT Authentication
+* **iOS / iPadOS App 協作**：Swift, SwiftUI, Apple Vision Framework, ARKit
+* **專案管理與協作**：Git, GitHub, Xcode
