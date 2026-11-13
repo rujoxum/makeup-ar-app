@@ -1,4 +1,4 @@
-# BlushNote：基於動態臉部辨識與端點 AI 之美妝 AR 教學系統
+# BlushNote：基於靜態臉部辨識與端點 AI 之美妝 AR 教學系統
 
 > **指導教授**：劉譯閎 教授  
 > **專案小組成員**：盧恩佳、洪語欣、廖冠筑、簡偉玲  
@@ -33,7 +33,7 @@
 * **跨端串接指南整理**：負責撰寫與整理 Supabase RESTful API 通訊規範、PostgREST 查詢範例及資料結構規格書，提供給負責 iOS 環境開發的同學進行端對端串接與整合。
 
 ### 4. 專案進度管理與資服競賽籌備 (Project Management)
-* **進度控制與里程碑交付**：統籌團隊 4 人之開發時程與任務指派，控管資服競賽產學合作組系統概述文件、技術展示文檔與展演 Prototype 之準時交付。
+* **進度控制與里程碑交付**：統籌團隊 4 人之開發時程與任務指派，控管專題進度會議內容之準時交付。
 
 ---
 
@@ -74,7 +74,7 @@
 </p>
 
 ### 架構亮點
-1. **端點 AI 運算 (Client Side)**：於 iPadOS 本地端透過 AVFoundation 擷取實時視訊，呼叫 Apple Vision 進行幾何臉型與 HSV 膚色色調辨識，完全不經雲端 API。
+1. **端點 AI 運算 (Client Side)**：於 iPadOS 本地端透過 AVFoundation 擷取實時視訊，呼叫 Apple Vision 進行幾何臉型與 HSV 膚色色調辨識，不經雲端 API。
 2. **微服務與資安防護 (Supabase Backend)**：串接 Supabase GoTrue 進行 JWT 鑑權，PostgreSQL 開啟 Row-Level Security (RLS) 列級安全政策，確保用戶隱私與權限隔離。
 
 ---
